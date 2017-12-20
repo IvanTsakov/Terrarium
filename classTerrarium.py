@@ -81,10 +81,10 @@ class Terrain():
 
 			c.age += 1
  
-			print colored('The cell we are currently in is >>> ', 'red'), c.cell
-			print colored('Those are the creatures in the cell >>>>>', 'blue'), c.cell.creatures
-			print colored('>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<', 'cyan')
-			print colored("It\'s my turn ->", 'green'), c
+			print colored(('The cell we are currently in is >>> '), 'red'), c.cell
+			print colored(('Those are the creatures in the cell >>>>>'), 'blue'), c.cell.creatures
+			print colored(('>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<'), 'cyan')
+			print colored("It's my turn ->", 'green'), c
 			c.play()
 			print
 		
