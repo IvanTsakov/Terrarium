@@ -1,0 +1,4 @@
+For started you'd like to install - TERMCOLOR ( a python package for colored prints)
+
+You can do that with - 'pip install termcolor' executed in the bash. 
+This package will allow you, as i said, to use colored prints. 
