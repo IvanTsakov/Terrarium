@@ -1,10 +1,10 @@
 import random
-
+from termcolor import colored
 class Terrain():
 	def __init__(self, x, y):
 		self.x = x 
 		self.y = y
-		self.num_creatures = input('Please enter how many creatures you\'d want: ')
+		self.num_creatures = 2#input('Please enter how many creatures you\'d want: ')
 		self.cells = []
 		self.creatures = []
 		self.create_cells()
@@ -34,7 +34,7 @@ class Terrain():
 				list1.append((item,value))
 		return list1 # building a list for storing the coords of every cell in the Terrain, used for building a terrain_cords
 
-	def has_animal_alive(self):
+	def has_animal_alive(self):	
 		return any(c for c in self.creatures if c.alive)
 
 
@@ -81,9 +81,10 @@ class Terrain():
 
 			c.age += 1
  
-			print 'The cell we are currently in is: ', c.cell
-			print 'Those are the creatures in the cell', c.cell.creatures
-			print 'It\'s my turn ->', c
+			print colored(('The cell we are currently in is >>> ', '!>>>', c.cell , '<<<!'), 'red')
+			print colored(('Those are the creatures in the cell', c.cell.creatures), 'blue')
+			print colored('>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<', 'cyan')
+			print colored("It\'s my turn ->", 'green'), c
 			c.play()
 			print
 		
@@ -118,7 +119,7 @@ class Creatures(object):
 		self.age = 0
 		self.type = type
 		self.status = 'alive' # status check
-		self.hunger = random.randrange(0,5)  #stores hunger value -> from generate hunger
+		self.hunger = random.randrange(3,8)  #stores hunger value -> from generate hunger
 		self.cell = cell #shows the current animal cell 
 
 	def __str__(self):
@@ -185,12 +186,12 @@ class Creatures(object):
 		if self.hunger < 5:
 			if self.can_eat():
 				self.eat()
-				print self, ' is really happy because it is fed now'
+				print colored((self, ' is really happy because it is fed now'),'red', 'on_white')
 			else:
 				self.move()
-				print 'I moved to ->', self.cell
+				print colored(('I moved to ->', self.cell),'blue', 'on_white')
 		else:
-			print 'I am not hungry enough to do something'
+			print colored('I am not hungry enough to do something', 'yellow', 'on_white')
 
 
 	def move(self):
@@ -268,13 +269,12 @@ class Scavenger(Creatures):
 
 
 def main():
-	terrain = Terrain(1,2)
-
+	terrain = Terrain(5,5)
 	day = 1
 	while terrain.has_animal_alive() and day <= 20:
 		print 'Today is day: ', day
 		terrain.play(day)
 		day += 1
-
+	print colored('The game is over, feel free to play again','white', 'on_red')
 if __name__ == main():
 	main()
