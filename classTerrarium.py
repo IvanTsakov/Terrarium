@@ -4,7 +4,7 @@ class Terrain():
 	def __init__(self, x, y):
 		self.x = x 
 		self.y = y
-		self.num_creatures = 2#input('Please enter how many creatures you\'d want: ')
+		self.num_creatures = input('Please enter how many creatures you\'d want: ')
 		self.cells = []
 		self.creatures = []
 		self.create_cells()
