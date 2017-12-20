@@ -6,14 +6,16 @@ class Terrain():
 		self.y = y
 		self.num_creatures = input('Please enter how many creatures you\'d want: ')
 		self.cells = []
-		self.creatures =[]
+		self.creatures = []
+		self.create_cells()
+		self.create_creatures()
 
 	def __str__(self):
 		return '[%s:%s]' % (self.x, self.y)
 	
 	def __repr__(self):
 		return '[%s:%s]' % (self.x, self.y)
-
+		
 	def __call__(self):
 		return self
 
@@ -25,214 +27,251 @@ class Terrain():
 		list1 = list(range(1, z+1))
 		return list1 #get the coordinate system values for x and y ( z = x; z = y )
 
-	def generate_cells(self):
+	def generate_coords(self):
 		list1 = []
 		for item in self.generate_size_for_side(self.x):
 			for value in self.generate_size_for_side(self.y):
 				list1.append((item,value))
-		return list1 # building a list for storing the coords of every cell in the Terrain, used for building a terrain_list
+		return list1 # building a list for storing the coords of every cell in the Terrain, used for building a terrain_cords
 
 	def has_animal_alive(self):
-		if self.creatures != []:
-			for i in self.creatures:
-				if i.status == 'dead' or 'eaten':
-					self.creatures.remove(i)
-		else:
-			print 'That is it, the game is over. All animals are dead'
-			return 
+		return any(c for c in self.creatures if c.alive)
 
-	def get_creatures(self):
-		list2 =[ ]
+
+	def create_creatures(self):
+		if not self.cells:
+			raise ValueError('No cells')
+		if self.creatures:
+			raise ValueError('Creatures already created')
+
+		creature_classess = [Carnivore, Hernivore, Scavenger]
 		for i in range(self.num_creatures):
-			types = [Carnivore(1), Hernivore(2), Scavenger(3)]
-			beast = random.choice(types)
-			list2.append(beast)
-		return list2
+			cell = random.choice(self.cells)
+			beast = random.choice(creature_classess)(cell)
+			self.creatures.append(beast)
 
-	def make_Terrain(self): #method for the whole area of the game.
-		terrain_list = []
-		terrain_list = self.generate_cells()
+	def create_cells(self): #method for the whole area of the game.
+		if self.cells:
+			raise ValueError('Cells already created')
 
-		creatures = []
-		creatures_list = self.get_creatures()
-
-		for i in creatures_list:
-			i.cell = random.choice(terrain_list)
-			self.creatures.append(i)
-	
-		for x, y in terrain_list:
-			generated_cell = TerrainCell(x, y, self)  #coords = (self.x,self.y), Terrain = self)
-			self.cells.append(generated_cell)
-			for c in self.creatures:
-				if c.cell == generated_cell.coords:
-					c.cell = generated_cell
-					generated_cell.creatures.append(c)
-		return self.cells
+		for x, y in self.generate_coords():
+			cell = TerrainCell(x, y, self) 
 
 	def get_surrounding_cells(self, x1, y1):
+		surrounding_cords = []
 		surrounding_cells = []
 		for x2 in range(x1-1, x1+2):
 			for y2 in range(y1-1, y1+2):
 				if (x1 != x2 or y1 != y2) and (0 < x2 <= self.x) and (0 < y2 <= self.y):
-					surrounding_cells.append((x2,y2))
-		for cell in self.cells:
-			for i in surrounding_cells:
-				if cell.coords == i:
-					i == cell
-					surrounding_cells.remove(i)
-					surrounding_cells.append(cell)
+					surrounding_cords.append((x2,y2))
+
+		cell_map = {cell.coords: cell for cell in self.cells}
+
+		for coords in surrounding_cords:
+			surrounding_cells.append(cell_map[coords])
+					
 		return surrounding_cells
 
 
 	def play(self, something):
 
-		for i in self.creatures:
-			if i.status == 'alive':
-				i.age += 1	
-			else:
-				print i.age 
-			if i.cell.cell_type == 'Water':
-				print i.cell
-				print 'All animals here are dead, because this is a Water cell.'
-				i.status = 'dead'
+		for c in self.creatures:
+			if not c.alive:
 				continue
-			print 'The cell we are currently in is: ', i.cell
-			print 
-			print 'It\'s my turn ->', i
-			print i.play()
+
+			c.age += 1
+ 
+			print 'The cell we are currently in is: ', c.cell
+			print 'Those are the creatures in the cell', c.cell.creatures
+			print 'It\'s my turn ->', c
+			c.play()
 			print
 		
 
 
 class TerrainCell(object):
 	def __init__(self, x, y, terrain):
-		self.terrain = terrain
-		self.cell_type = random.choice(['Water', 'Grass', 'Mountain', 'Desert']) #gets random type.
 		self.x = x
 		self.y = y
 		self.creatures = []
+		self.cell_type = random.choice(['Water', 'Grass', 'Mountain', 'Desert']) #gets random type.
+		self.terrain = terrain
+		self.terrain.cells.append(self)
 
 	@property
 	def coords(self):
-		return (self.x,self.y)
+		return (self.x, self.y)
+
+	@property
+	def is_water(self):
+		return self.cell_type == 'Water'
 
 	def __str__(self):
-		return '[%s - %s - %s ]' % (self.coords, self.cell_type, self.creatures)
+		return '[%s - %s]' % (self.coords, self.cell_type)
 
 	def __repr__(self):
 		return '[%s - %s]' % (self.coords, self.cell_type)
 
 
-class Creatures:
-	def __init__(self, cell):
-		self.cell = cell #shows the current animal cell 
-		self.hunger = random.randrange(3,8)  #stores hunger value -> from generate hunger
-		self.status = 'alive' # status check
+class Creatures(object):
+	def __init__(self, type, cell):
 		self.age = 0
+		self.type = type
+		self.status = 'alive' # status check
+		self.hunger = random.randrange(0,5)  #stores hunger value -> from generate hunger
+		self.cell = cell #shows the current animal cell 
+
 	def __str__(self):
 		return '[Type:%s]--[Hunger:%s]--[Status:%s] -- [Age: %s]'%(self.type, self.hunger, self.status, self.age)
 
 	def __repr__(self):
 		return '[Type:%s]--[Hunger:%s]--[Status:%s]--[Age: %s]'%(self.type, self.hunger, self.status, self.age)
 
+	@property
+	def cell(self):
+		return self._cell
+
+	@cell.setter
+	def cell(self, value):
+		prev_cell = getattr(self, '_cell', None)
+		if prev_cell:
+			prev_cell.creatures.remove(self)
+
+		self._cell = value
+		self._cell.creatures.append(self)
+
+		if self._cell.is_water:
+			self.status = 'dead'
+
+	@property
+	def hunger(self):
+		return self._hunger
+
+	@hunger.setter
+	def hunger(self, value):
+		if not self.alive:
+			raise ValueError('I"m already dead')
+
+		self._hunger = value
+		if self._hunger <= 0:
+			self.status = 'dead'
+
+	@property
+	def alive(self):
+		return self.status == 'alive'
+
+	@property
+	def dead(self):
+		return self.status == 'dead'
+
+	@property
+	def eaten(self):
+		return self.status == 'eaten'
+
 	def can_eat(self):
 		raise NotImplemented('Hello darkness my old friend')
 
 	def eat(self):
-			self.hunger = self.hunger + random.randint(2,5)
-			return self.hunger
+		self.hunger = self.hunger + random.randint(2,5)
+		return self.hunger
 
 	def play(self):
-		if self.hunger <= 0 or self.status != 'alive':
-			if self.status == 'eaten':
-				return 'This creature has been eaten', self
-			else:
-				self.status = 'dead'
-				return 'This creature is dead', self
+		self.hunger = self.hunger - 1
+
+		if not self.alive:
+			print "I'm %s i wont do anything" % self.status
+			return
 
 		if self.hunger < 5:
 			if self.can_eat():
+				self.eat()
 				print self, ' is really happy because it is fed now'
-				return 'It ate a lot and the new hunger is:', self.hunger
 			else:
-				print 'I moved to ->', self.move()
-				self.cell.creatures.append(self)
-				self.hunger = self.hunger - 1
-				if self.hunger <= 0:
-					self.status = 'dead'
-					return 'whoops i died', self
-				return self.cell
+				self.move()
+				print 'I moved to ->', self.cell
 		else:
 			print 'I am not hungry enough to do something'
-			self.hunger = self.hunger - 1
-			return 'My hunger is: ', self.hunger
 
 
 	def move(self):
-		self.cell.creatures.remove(self)
 		moves = self.cell.terrain.get_surrounding_cells(self.cell.x, self.cell.y)
 		self.cell = random.choice(moves)
-		return self.cell
 
 class Carnivore(Creatures):
 	def __init__(self, cell):
-		Creatures.__init__(self, cell)
-		self.type = 'Carnivore'
+		super(Carnivore, self).__init__('Carnivore', cell)
 
 	def __call__(self,cell):
 		return self
 
+	def search_food(self):
+		try:
+			c = next(c for c in self.cell.creatures if c.type == 'Hernivore' and c.alive)
+			return c
+		except StopIteration:
+			return None
+
+	def eat(self):
+		food = self.search_food()
+		if not food:
+			raise ValueError('No food found')
+		# call parent to increase the hunger
+		super(Carnivore, self).eat()
+		food.status = 'dead'
+
 	def can_eat(self):
-		for i in self.cell.creatures:
-			if self == i:
-				continue
-			else:
-				if i.type == 'Hernivore' and i.status == 'alive':
-					self.eat()
-					i.status = 'eaten'
-					return self.hunger
-		return
+		food = self.search_food()
+		if not food:
+			return False
+		return True
 
 class Hernivore(Creatures):
 	def __init__(self, cell):
-		Creatures.__init__(self, cell)
-		self.type = 'Hernivore'
+		super(Hernivore, self).__init__('Hernivore', cell)
 
 	def __call__(self):
 		return self
 
 	def can_eat(self):
-		if self.cell.cell_type == 'Grass':
-			return self.eat()
-
+		return self.cell.cell_type == 'Grass'
 
 
 class Scavenger(Creatures):
 	def __init__(self, cell):
-		Creatures.__init__(self, cell)	
-		self.type = 'Scavenger'
+		super(Scavenger, self).__init__('Scavenger', cell)
 
 	def __call__(self,cell):
 		return self
 
+	def search_food(self):
+		try:
+			c = next(c for c in self.cell.creatures if c.dead)
+			return c
+		except StopIteration:
+			return None
+
+	def eat(self):
+		food = self.search_food()
+
+		if not food:
+			raise ValueError('No food found')
+
+		# call parent to increase the hunger
+		super(Scavenger, self).eat()
+		food.status = 'eaten'
+
 	def can_eat(self):
-		for i in self.cell.creatures:
-			if self == i:
-				continue
-			else:
-				if i.status == 'dead':
-					self.eat()
-					i.status = 'eaten'
-					return self.hunger
-		return
+		food = self.search_food()
+		if not food:
+			return False
+		return True
 
 
 def main():
 	terrain = Terrain(1,2)
-	terrain.make_Terrain()
 
 	day = 1
-	while day <=2 or terrain.has_animal_alive():
+	while terrain.has_animal_alive() and day <= 20:
 		print 'Today is day: ', day
 		terrain.play(day)
 		day += 1
